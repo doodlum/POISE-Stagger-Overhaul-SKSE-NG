@@ -1,15 +1,16 @@
 #include "Loki_PluginTools.h"
 
 /* 
-   needed because *i* fucked up my Xbyak stuff
+   needed because *i* f*d up my Xbyak stuff
+   doodlez note: removed foul language and commented out unused function
 */
-void* Loki::PluginTools::CodeAllocation(Xbyak::CodeGenerator& a_code, SKSE::Trampoline* t_ptr) {
-
-    auto result = t_ptr->allocate(a_code.getSize());
-    std::memcpy(result, a_code.getCode(), a_code.getSize());
-    return result;
-
-}
+//void* Loki::PluginTools::CodeAllocation(Xbyak::CodeGenerator& a_code, SKSE::Trampoline* t_ptr) {
+//
+//    auto result = t_ptr->allocate(a_code.getSize());
+//    std::memcpy(result, a_code.getCode(), a_code.getSize());
+//    return result;
+//
+//}
 
 /*
     leftover from Paraglider, kept it just in case

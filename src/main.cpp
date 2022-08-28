@@ -1,4 +1,4 @@
-﻿#include "C:/dev/simpleini-master/SimpleIni.h"
+#include "SimpleIni.h"
 #include "POISE/PoiseMod.h"
 #include "POISE/TrueHUDControl.h"
 #include "POISE/TrueHUDAPI.h"
@@ -6,55 +6,10 @@
 
 const SKSE::MessagingInterface* g_messaging2 = nullptr;
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * a_skse, SKSE::PluginInfo * a_info)
-{
-#ifndef NDEBUG
-    auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
-#else
-    auto path = logger::log_directory();
-    if (!path) {
-        return false;
-    }
-
-    *path /= "loki_POISE.log"sv;
-    auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-#endif
-
-    auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
-
-#ifndef NDEBUG
-    log->set_level(spdlog::level::trace);
-#else
-    log->set_level(spdlog::level::info);
-    log->flush_on(spdlog::level::info);
-#endif
-
-    spdlog::set_default_logger(std::move(log));
-    spdlog::set_pattern("%g(%#): [%^%l%$] %v"s);
-
-    logger::info("loki_POISE v1.0.0");
-
-    a_info->infoVersion = SKSE::PluginInfo::kVersion;
-    a_info->name = "loki_POISE";
-    a_info->version = 1;
-
-    if (a_skse->IsEditor()) {
-        logger::critical("Loaded in editor, marking as incompatible"sv);
-        return false;
-    }
-
-    const auto ver = a_skse->RuntimeVersion();
-    if (ver < SKSE::RUNTIME_1_5_39) {
-        logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
-        return false;
-    }
-
-    return true;
-}
 
 namespace PoiseMod {  // Papyrus Functions
 
-    inline auto DamagePoise(RE::StaticFunctionTag* a_tag, RE::Actor* a_actor, float a_amount) -> void {
+    inline auto DamagePoise(RE::StaticFunctionTag*, RE::Actor* a_actor, float a_amount) -> void {
 
         if (!a_actor) {
             return;
@@ -62,12 +17,12 @@ namespace PoiseMod {  // Papyrus Functions
             int poise = (int)a_actor->pad0EC;
             poise -= (int)a_amount;
             a_actor->pad0EC = poise;
-            if (a_actor->pad0EC > 100000) { a_actor->pad0EC = 0.00f; }
+            if (a_actor->pad0EC > 100000) { a_actor->pad0EC = (uint32_t)0.00f; }
         }
 
     }
 
-    inline auto RestorePoise(RE::StaticFunctionTag* a_tag, RE::Actor* a_actor, float a_amount) -> void {
+    inline auto RestorePoise(RE::StaticFunctionTag*, RE::Actor* a_actor, float a_amount) -> void {
 
         if (!a_actor) {
             return;
@@ -75,12 +30,14 @@ namespace PoiseMod {  // Papyrus Functions
             int poise = (int)a_actor->pad0EC;
             poise += (int)a_amount;
             a_actor->pad0EC = poise;
-            if (a_actor->pad0EC > 100000) { a_actor->pad0EC = 0.00f; }
+			if (a_actor->pad0EC > 100000) {
+				a_actor->pad0EC = (uint32_t)0.00f;
+			}
         }
 
     }
 
-    inline auto GetPoise(RE::StaticFunctionTag* a_tag, RE::Actor* a_actor) -> float {
+    inline auto GetPoise(RE::StaticFunctionTag*, RE::Actor* a_actor) -> float {
 
         if (!a_actor) {
             return -1.00f;
@@ -90,7 +47,7 @@ namespace PoiseMod {  // Papyrus Functions
 
     }
 
-    inline auto GetMaxPoise(RE::StaticFunctionTag* a_tag, RE::Actor* a_actor) -> float {
+    inline auto GetMaxPoise(RE::StaticFunctionTag*, RE::Actor* a_actor) -> float {
 
         if (!a_actor) {
             return -1.00f;
@@ -138,13 +95,15 @@ namespace PoiseMod {  // Papyrus Functions
 
     }
 
-    inline auto SetPoise(RE::StaticFunctionTag* a_tag, RE::Actor* a_actor, float a_amount) -> void {
+    inline auto SetPoise(RE::StaticFunctionTag*, RE::Actor* a_actor, float a_amount) -> void {
 
         if (!a_actor) {
             return;
         } else {
             a_actor->pad0EC = (int)a_amount;
-            if (a_actor->pad0EC > 100000) { a_actor->pad0EC = 0.00f; }
+			if (a_actor->pad0EC > 100000) {
+				a_actor->pad0EC = (uint32_t)0.00f;
+			}
         }
 
     }
@@ -202,22 +161,73 @@ static void MessageHandler(SKSE::MessagingInterface::Message* message) {
 
 }
 
-extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse)
+void InitializeLog()
 {
-    logger::info("POISE loaded");
-    SKSE::Init(a_skse);
-    SKSE::AllocTrampoline(64);
+#ifndef NDEBUG
+	auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
+#else
+	auto path = logger::log_directory();
+	if (!path) {
+		util::report_and_fail("Failed to find standard logging directory"sv);
+	}
 
-    auto messaging = SKSE::GetMessagingInterface();
-    if (!messaging->RegisterListener("SKSE", MessageHandler)) { // add callbacks for TrueHUD
-        return false;
-    }
-    SKSE::GetPapyrusInterface()->Register(PoiseMod::RegisterFuncsForSKSE);  // register papyrus functions
+	*path /= fmt::format("{}.log"sv, Plugin::NAME);
+	auto       sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
+#endif
 
-    Loki::PoiseMod::InstallStaggerHook();
-    Loki::PoiseMod::InstallWaterHook();
-    Loki::PoiseMod::InstallIsActorKnockdownHook();
-    Loki::PoiseMod::InstallMagicEventSink();
+#ifndef NDEBUG
+	const auto level = spdlog::level::trace;
+#else
+	const auto level = spdlog::level::info;
+#endif
 
-    return true;
+	auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
+	log->set_level(level);
+	log->flush_on(level);
+
+	spdlog::set_default_logger(std::move(log));
+	spdlog::set_pattern("[%l] %v"s);
+}
+
+EXTERN_C [[maybe_unused]] __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
+{
+#ifndef NDEBUG
+	while (!IsDebuggerPresent()) {};
+#endif
+
+	InitializeLog();
+
+	logger::info("POISE loaded");
+
+	SKSE::Init(a_skse);
+	SKSE::AllocTrampoline(64);
+
+	auto messaging = SKSE::GetMessagingInterface();
+	if (!messaging->RegisterListener("SKSE", MessageHandler)) {  // add callbacks for TrueHUD
+		return false;
+	}
+	SKSE::GetPapyrusInterface()->Register(PoiseMod::RegisterFuncsForSKSE);  // register papyrus functions
+
+	Loki::PoiseMod::InstallStaggerHook();
+	Loki::PoiseMod::InstallWaterHook();
+	Loki::PoiseMod::InstallIsActorKnockdownHook();
+	Loki::PoiseMod::InstallMagicEventSink();
+
+	return true;
+}
+
+EXTERN_C [[maybe_unused]] __declspec(dllexport) constinit auto SKSEPlugin_Version = []() noexcept {
+	SKSE::PluginVersionData v;
+	v.PluginName("PluginName");
+	v.PluginVersion({ 1, 0, 0, 0 });
+	v.UsesAddressLibrary(true);
+	return v;
+}();
+
+EXTERN_C [[maybe_unused]] __declspec(dllexport) bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface*, SKSE::PluginInfo* pluginInfo)
+{
+	pluginInfo->name = SKSEPlugin_Version.pluginName;
+	pluginInfo->infoVersion = SKSE::PluginInfo::kVersion;
+	pluginInfo->version = SKSEPlugin_Version.pluginVersion;
+	return true;
 }

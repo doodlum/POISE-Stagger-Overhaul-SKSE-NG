@@ -39,7 +39,7 @@ void Loki::PoiseMod::ReadPoiseTOML() {
             ss << "Error parsing file \'" << *e.source().path << "\':\n"
                 << '\t' << e.description() << '\n'
                 << "\t\t(" << e.source().begin << ')';
-            logger::error(ss.str());
+			logger::error("{}", ss.str());
         } catch (const std::exception& e) {
             logger::error("{}", e.what());
         } catch (...) {
@@ -54,7 +54,7 @@ void Loki::PoiseMod::ReadPoiseTOML() {
     if (std::filesystem::is_directory(path)) {
         for (const auto& file : std::filesystem::directory_iterator(path)) {
             if (std::filesystem::is_regular_file(file) && file.path().extension() == ext) {
-                auto filePath = file.path();
+				auto& filePath = file.path();
                 if (filePath != basecfg) {
                     readToml(filePath);
                 }
@@ -68,67 +68,66 @@ void Loki::PoiseMod::ReadPoiseTOML() {
 
 }
 
-Loki::PoiseMod::PoiseMod() {
+Loki::PoiseMod::PoiseMod()
+{
+	Loki::PoiseMod::ReadPoiseTOML();
 
-    Loki::PoiseMod::ReadPoiseTOML();
+	CSimpleIniA ini;
+	ini.SetUnicode();
+	auto     filename = L"Data/SKSE/Plugins/loki_POISE.ini";
+	ini.LoadFile(filename);
 
-    CSimpleIniA ini;
-    ini.SetUnicode();
-    auto filename = L"Data/SKSE/Plugins/loki_POISE.ini";
-    SI_Error rc = ini.LoadFile(filename);
+	this->ConsoleInfoDump = ini.GetBoolValue("DEBUG", "bConsoleInfoDump", false);
 
-    this->ConsoleInfoDump = ini.GetBoolValue("DEBUG", "bConsoleInfoDump", false);
+	this->PlayerPoiseEnabled = ini.GetBoolValue("MAIN", "bPlayerPoiseEnabled", false);
+	this->NPCPoiseEnabled = ini.GetBoolValue("MAIN", "bNPCPoiseEnabled", false);
+	this->PlayerRagdollReplacer = ini.GetBoolValue("MAIN", "bPlayerRagdollReplacer", false);
+	this->NPCRagdollReplacer = ini.GetBoolValue("MAIN", "bNPCRagdollReplacer", false);
+	this->PoiseRegenEnabled = ini.GetBoolValue("MAIN", "bPoiseRegen", false);
+	this->TrueHUDBars = ini.GetBoolValue("MAIN", "bTrueHUDBars", false);
+	this->poiseBreakThreshhold0 = (float)ini.GetDoubleValue("MAIN", "fPoiseBreakThreshhold0", -1.00f);
+	this->poiseBreakThreshhold1 = (float)ini.GetDoubleValue("MAIN", "fPoiseBreakThreshhold1", -1.00f);
+	this->poiseBreakThreshhold2 = (float)ini.GetDoubleValue("MAIN", "fPoiseBreakThreshhold2", -1.00f);
 
-    this->PlayerPoiseEnabled    = ini.GetBoolValue("MAIN", "bPlayerPoiseEnabled", false);
-    this->NPCPoiseEnabled       = ini.GetBoolValue("MAIN", "bNPCPoiseEnabled", false);
-    this->PlayerRagdollReplacer = ini.GetBoolValue("MAIN", "bPlayerRagdollReplacer", false);
-    this->NPCRagdollReplacer    = ini.GetBoolValue("MAIN", "bNPCRagdollReplacer", false);
-    this->PoiseRegenEnabled     = ini.GetBoolValue("MAIN", "bPoiseRegen", false);
-    this->TrueHUDBars           = ini.GetBoolValue("MAIN", "bTrueHUDBars", false);
-    this->poiseBreakThreshhold0  = ini.GetDoubleValue("MAIN", "fPoiseBreakThreshhold0", -1.00f);
-    this->poiseBreakThreshhold1  = ini.GetDoubleValue("MAIN", "fPoiseBreakThreshhold1", -1.00f);
-    this->poiseBreakThreshhold2  = ini.GetDoubleValue("MAIN", "fPoiseBreakThreshhold2", -1.00f);
+	this->PowerAttackMult = (float)ini.GetDoubleValue("WEAPON", "fPowerAttackMult", -1.00f);
+	this->BlockedMult = (float)ini.GetDoubleValue("WEAPON", "fBlockedMult", -1.00f);
+	this->BashMult = (float)ini.GetDoubleValue("WEAPON", "fBashMult", -1.00f);
+	this->HyperArmourMult = (float)ini.GetDoubleValue("WEAPON", "fHyperArmourMult", -1.00f);
+	this->BowMult = (float)ini.GetDoubleValue("WEAPON", "fBowMult", -1.00f);
+	this->CrossbowMult = (float)ini.GetDoubleValue("WEAPON", "fCrossbowMult", -1.00f);
+	this->Hand2Hand = (float)ini.GetDoubleValue("WEAPON", "fHand2HandMult", -1.00f);
+	this->OneHandAxe = (float)ini.GetDoubleValue("WEAPON", "fOneHandAxeMult", -1.00f);
+	this->OneHandDagger = (float)ini.GetDoubleValue("WEAPON", "fOneHandDaggerMult", -1.00f);
+	this->OneHandMace = (float)ini.GetDoubleValue("WEAPON", "fOneHandMaceMult", -1.00f);
+	this->OneHandSword = (float)ini.GetDoubleValue("WEAPON", "fOneHandSwordMult", -1.00f);
+	this->TwoHandAxe = (float)ini.GetDoubleValue("WEAPON", "fTwoHandAxeMult", -1.00f);
+	this->TwoHandSword = (float)ini.GetDoubleValue("WEAPON", "fTwoHandSwordMult", -1.00f);
 
-    this->PowerAttackMult = ini.GetDoubleValue("WEAPON", "fPowerAttackMult", -1.00f);
-    this->BlockedMult     = ini.GetDoubleValue("WEAPON", "fBlockedMult", -1.00f);
-    this->BashMult        = ini.GetDoubleValue("WEAPON", "fBashMult", -1.00f);
-    this->HyperArmourMult = ini.GetDoubleValue("WEAPON", "fHyperArmourMult", -1.00f);
-    this->BowMult         = ini.GetDoubleValue("WEAPON", "fBowMult", -1.00f);
-    this->CrossbowMult    = ini.GetDoubleValue("WEAPON", "fCrossbowMult", -1.00f);
-    this->Hand2Hand       = ini.GetDoubleValue("WEAPON", "fHand2HandMult", -1.00f);
-    this->OneHandAxe      = ini.GetDoubleValue("WEAPON", "fOneHandAxeMult", -1.00f);
-    this->OneHandDagger   = ini.GetDoubleValue("WEAPON", "fOneHandDaggerMult", -1.00f);
-    this->OneHandMace     = ini.GetDoubleValue("WEAPON", "fOneHandMaceMult", -1.00f);
-    this->OneHandSword    = ini.GetDoubleValue("WEAPON", "fOneHandSwordMult", -1.00f);
-    this->TwoHandAxe      = ini.GetDoubleValue("WEAPON", "fTwoHandAxeMult", -1.00f);
-    this->TwoHandSword    = ini.GetDoubleValue("WEAPON", "fTwoHandSwordMult", -1.00f);
+	this->RapierMult = (float)ini.GetDoubleValue("ANIMATED_ARMOURY", "fRapierMult", -1.00f);
+	this->PikeMult = (float)ini.GetDoubleValue("ANIMATED_ARMOURY", "fPikeMult", -1.00f);
+	this->SpearMult = (float)ini.GetDoubleValue("ANIMATED_ARMOURY", "fSpearMult", -1.00f);
+	this->HalberdMult = (float)ini.GetDoubleValue("ANIMATED_ARMOURY", "fHalberdMult", -1.00f);
+	this->QtrStaffMult = (float)ini.GetDoubleValue("ANIMATED_ARMOURY", "fQtrStaffMult", -1.00f);
+	this->CaestusMult = (float)ini.GetDoubleValue("ANIMATED_ARMOURY", "fCaestusMult", -1.00f);
+	this->ClawMult = (float)ini.GetDoubleValue("ANIMATED_ARMOURY", "fClawMult", -1.00f);
+	this->WhipMult = (float)ini.GetDoubleValue("ANIMATED_ARMOURY", "fWhipMult", -1.00f);
 
-    this->RapierMult   = ini.GetDoubleValue("ANIMATED_ARMOURY", "fRapierMult", -1.00f);
-    this->PikeMult     = ini.GetDoubleValue("ANIMATED_ARMOURY", "fPikeMult", -1.00f);
-    this->SpearMult    = ini.GetDoubleValue("ANIMATED_ARMOURY", "fSpearMult", -1.00f);
-    this->HalberdMult  = ini.GetDoubleValue("ANIMATED_ARMOURY", "fHalberdMult", -1.00f);
-    this->QtrStaffMult = ini.GetDoubleValue("ANIMATED_ARMOURY", "fQtrStaffMult", -1.00f);
-    this->CaestusMult  = ini.GetDoubleValue("ANIMATED_ARMOURY", "fCaestusMult", -1.00f);
-    this->ClawMult     = ini.GetDoubleValue("ANIMATED_ARMOURY", "fClawMult", -1.00f);
-    this->WhipMult     = ini.GetDoubleValue("ANIMATED_ARMOURY", "fWhipMult", -1.00f);
+	if (auto dataHandle = RE::TESDataHandler::GetSingleton(); dataHandle) {
+		poiseDelaySpell = dataHandle->LookupForm<RE::SpellItem>(0xD62, "loki_POISE.esp");
+		poiseDelayEffect = dataHandle->LookupForm<RE::EffectSetting>(0xD63, "loki_POISE.esp");
+		PoiseDmgNerf = dataHandle->LookupForm<RE::BGSKeyword>(0x433C, "loki_POISE.esp");
+		PoiseDmgBuff = dataHandle->LookupForm<RE::BGSKeyword>(0x433B, "loki_POISE.esp");
+		PoiseHPNerf = dataHandle->LookupForm<RE::BGSKeyword>(0x433A, "loki_POISE.esp");
+		PoiseHPBuff = dataHandle->LookupForm<RE::BGSKeyword>(0x4339, "loki_POISE.esp");
 
-    if (auto dataHandle = RE::TESDataHandler::GetSingleton(); dataHandle) {
-        poiseDelaySpell  = dataHandle->LookupForm<RE::SpellItem>(0xD62, "loki_POISE.esp");
-        poiseDelayEffect = dataHandle->LookupForm<RE::EffectSetting>(0xD63, "loki_POISE.esp");
-        PoiseDmgNerf     = dataHandle->LookupForm<RE::BGSKeyword>(0x433C, "loki_POISE.esp");
-        PoiseDmgBuff     = dataHandle->LookupForm<RE::BGSKeyword>(0x433B, "loki_POISE.esp");
-        PoiseHPNerf      = dataHandle->LookupForm<RE::BGSKeyword>(0x433A, "loki_POISE.esp");
-        PoiseHPBuff      = dataHandle->LookupForm<RE::BGSKeyword>(0x4339, "loki_POISE.esp");
-
-        kCreature = dataHandle->LookupForm<RE::BGSKeyword>(0x13795, "Skyrim.esm");
-        kDragon   = dataHandle->LookupForm<RE::BGSKeyword>(0x35d59, "Skyrim.esm");
-        kGiant    = dataHandle->LookupForm<RE::BGSKeyword>(0x10E984, "Skyrim.esm");
-        kGhost    = dataHandle->LookupForm<RE::BGSKeyword>(0xd205e, "Skyrim.esm");
-        kDwarven  = dataHandle->LookupForm<RE::BGSKeyword>(0x1397a, "Skyrim.esm");
-        kTroll    = dataHandle->LookupForm<RE::BGSKeyword>(0xf5d16, "Skyrim.esm");
-        WeapMaterialSilver = dataHandle->LookupForm<RE::BGSKeyword>(0x10aa1a, "Skyrim.esm");
-    }
-
+		kCreature = dataHandle->LookupForm<RE::BGSKeyword>(0x13795, "Skyrim.esm");
+		kDragon = dataHandle->LookupForm<RE::BGSKeyword>(0x35d59, "Skyrim.esm");
+		kGiant = dataHandle->LookupForm<RE::BGSKeyword>(0x10E984, "Skyrim.esm");
+		kGhost = dataHandle->LookupForm<RE::BGSKeyword>(0xd205e, "Skyrim.esm");
+		kDwarven = dataHandle->LookupForm<RE::BGSKeyword>(0x1397a, "Skyrim.esm");
+		kTroll = dataHandle->LookupForm<RE::BGSKeyword>(0xf5d16, "Skyrim.esm");
+		WeapMaterialSilver = dataHandle->LookupForm<RE::BGSKeyword>(0x10aa1a, "Skyrim.esm");
+	}
 }
 
 Loki::PoiseMod* Loki::PoiseMod::GetSingleton() {
@@ -137,28 +136,24 @@ Loki::PoiseMod* Loki::PoiseMod::GetSingleton() {
 }
 
 void Loki::PoiseMod::InstallStaggerHook() {
-    REL::Relocation<std::uintptr_t> StaggerHook{ REL::ID(37673/*628c20*/) };
-
-    auto& trampoline = SKSE::GetTrampoline();
-    _ProcessHitEvent = trampoline.write_call<5>(StaggerHook.address() + 0x3C0, ProcessHitEvent);
+      auto& trampoline = SKSE::GetTrampoline();
+    _ProcessHitEvent = trampoline.write_call<5>(REL::RelocationID(37673, 38627).address() + REL::Relocate(0x3C0, 0x4A8), ProcessHitEvent);
 
     logger::info("ProcessHitEvent hook injected");
 }
 
 void Loki::PoiseMod::InstallWaterHook() {
-    REL::Relocation<std::uintptr_t> ActorUpdate{ REL::ID(36357) };
     // last ditch effort
+    // doodlez note. This is very silly, Hook updates as I show in my own mods. This hook is only left as-is for parity upstream.
     auto& trampoline = SKSE::GetTrampoline();
-    _GetSubmergedLevel = trampoline.write_call<5>(ActorUpdate.address() + 0x6D3, GetSubmergedLevel);
+    _GetSubmergedLevel = trampoline.write_call<5>(REL::RelocationID(36357, 37348).address() + REL::Relocate(0x6D3, 0x674), GetSubmergedLevel);
 
     logger::info("Update hook injected");
 }
 
 void Loki::PoiseMod::InstallIsActorKnockdownHook() {
-    REL::Relocation<std::uintptr_t> isActorKnockdown{ REL::ID(38858) };
-
     auto& trampoline = SKSE::GetTrampoline();
-    _IsActorKnockdown = trampoline.write_call<5>(isActorKnockdown.address() + 0x7E, IsActorKnockdown);
+    _IsActorKnockdown = trampoline.write_call<5>(REL::RelocationID(38858, 39895).address() + REL::Relocate(0x7E, 0x68), IsActorKnockdown);
 
     logger::info("isActorKnockdown hook injected");
 }
@@ -184,7 +179,8 @@ Loki::PoiseMagicDamage* Loki::PoiseMagicDamage::GetSingleton() {
     return &singleton;
 }
 
-auto Loki::PoiseMagicDamage::ProcessEvent(const RE::TESHitEvent* a_event, RE::BSTEventSource<RE::TESHitEvent>* a_eventSource) -> RE::BSEventNotifyControl {
+auto Loki::PoiseMagicDamage::ProcessEvent(const RE::TESHitEvent* a_event, RE::BSTEventSource<RE::TESHitEvent>*) -> RE::BSEventNotifyControl {
+	auto ptr = Loki::PoiseMod::GetSingleton();
     if (!a_event || !a_event->projectile) {
         return RE::BSEventNotifyControl::kContinue;
     }
@@ -194,24 +190,24 @@ auto Loki::PoiseMagicDamage::ProcessEvent(const RE::TESHitEvent* a_event, RE::BS
     else {
         if (auto projectile = RE::TESForm::LookupByID(a_event->projectile)->As<RE::Projectile>(); projectile) {
             if (auto actor = a_event->target.get()->As<RE::Actor>(); actor) {
-                auto ptr = Loki::PoiseMod::GetSingleton();
 
                 float a_result = 8.00f;
                 if (auto effect = projectile->spell->avEffectSetting; effect) {
                     a_result = effect->data.baseCost;
-                    if (ptr->ConsoleInfoDump) {
+                    if (ptr->ConsoleInfoDump)
                         RE::ConsoleLog::GetSingleton()->Print("Poise Damage from Spell -> %f", a_result);
-                    }
                 }
                 else {
-                    if (ptr->ConsoleInfoDump) {
+                    if (ptr->ConsoleInfoDump)
                         RE::ConsoleLog::GetSingleton()->Print("avEffectSetting null, using default poise damage");
-                    }
                 }
                 actor->pad0EC -= (int)a_result;
-                if (actor->pad0EC > 100000) { actor->pad0EC = 0.00f; }
+				if (actor->pad0EC > 100000) {
+					actor->pad0EC = (uint32_t)0.00f;
+				}
 
-                RE::ConsoleLog::GetSingleton()->Print("current poise health -> %f", actor->pad0EC);
+                if (ptr->ConsoleInfoDump)
+                    RE::ConsoleLog::GetSingleton()->Print("current poise health -> %f", actor->pad0EC);
 
                 float maxPoise = PoiseMod::CalculateMaxPoise(actor);
                 auto threshhold0 = maxPoise * ptr->poiseBreakThreshhold0;
@@ -229,13 +225,13 @@ auto Loki::PoiseMagicDamage::ProcessEvent(const RE::TESHitEvent* a_event, RE::BS
                 if (actor->GetHandle() == Form->GetHandle()) { stagDir = 0.0f; } // 0 when self-hit
 
                 auto caster = actor->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
-                caster->Cast(ptr->poiseDelaySpell, false, actor, 1.0f, false, 0.0f, 0);
+				caster->CastSpellImmediate(ptr->poiseDelaySpell, false, actor, 1.0f, false, 0.0f, 0);
 
                 bool isBlk = false;
                 static RE::BSFixedString str = NULL;
                 if ((float)actor->pad0EC <= 0.00f) {
                     actor->SetGraphVariableFloat(ptr->staggerDire, stagDir); // set direction
-                    actor->pad0EC = maxPoise; // remember earlier when we calculated max poise health?
+					actor->pad0EC = (uint32_t)maxPoise;                       // remember earlier when we calculated max poise health?
                     if (TrueHUDControl::GetSingleton()->g_trueHUD) {
                         TrueHUDControl::GetSingleton()->g_trueHUD->
                             FlashActorSpecialBar(SKSE::GetPluginHandle(), actor->GetHandle(), false);
@@ -338,9 +334,8 @@ auto Loki::PoiseMagicDamage::ProcessEvent(const RE::TESHitEvent* a_event, RE::BS
         }
     }
     if (a_event->target->IsPlayerRef()) {
-        if (Loki::PoiseMod::GetSingleton()->ConsoleInfoDump) {
+        if (ptr->ConsoleInfoDump)
             RE::ConsoleLog::GetSingleton()->Print("formID -> %11x", a_event->projectile);
-        }
     }
     return RE::BSEventNotifyControl::kContinue;
 }
@@ -390,11 +385,11 @@ float Loki::PoiseMod::CalculatePoiseDamage(RE::HitData& a_hitData, RE::Actor* a_
                 break;
             }
             case RE::WEAPON_TYPE::kHandToHandMelee: {
-                if (weap->HasKeyword(0x19AAB3)) {
+					if (weap->HasKeywordID(0x19AAB3)) {
                     a_result *= ptr->CaestusMult;
                     break;
                 }
-                else if (weap->HasKeyword(0x19AAB4)) {
+                else if (weap->HasKeywordID(0x19AAB4)) {
                     a_result *= ptr->ClawMult;
                     break;
                 }
@@ -417,7 +412,7 @@ float Loki::PoiseMod::CalculatePoiseDamage(RE::HitData& a_hitData, RE::Actor* a_
                 break;
             }
             case RE::WEAPON_TYPE::kOneHandSword: {
-                if (weap->HasKeyword(0x801)) {
+				if (weap->HasKeywordID(0x801)) {
                     a_result *= ptr->RapierMult;
                     break;
                 }
@@ -425,11 +420,11 @@ float Loki::PoiseMod::CalculatePoiseDamage(RE::HitData& a_hitData, RE::Actor* a_
                 break;
             }
             case RE::WEAPON_TYPE::kTwoHandAxe: {
-                if (weap->HasKeyword(0xE4580)) {
+				if (weap->HasKeywordID(0xE4580)) {
                     a_result *= ptr->HalberdMult;
                     break;
                 }
-                if (weap->HasKeyword(0xE4581)) {
+					if (weap->HasKeywordID(0xE4581)) {
                     a_result *= ptr->QtrStaffMult;
                     break;
                 }
@@ -437,11 +432,11 @@ float Loki::PoiseMod::CalculatePoiseDamage(RE::HitData& a_hitData, RE::Actor* a_
                 break;
             }
             case RE::WEAPON_TYPE::kTwoHandSword: {
-                if (weap->HasKeyword(0xE457E)) {
+				if (weap->HasKeywordID(0xE457E)) {
                     a_result *= ptr->PikeMult;
                     break;
                 }
-                if (weap->HasKeyword(0xE457F)) {
+				if (weap->HasKeywordID(0xE457F)) {
                     a_result *= ptr->SpearMult;
                     break;
                 }
@@ -453,7 +448,7 @@ float Loki::PoiseMod::CalculatePoiseDamage(RE::HitData& a_hitData, RE::Actor* a_
         if (weap->HasKeyword(ptr->WeapMaterialSilver)) isSilver = true;
     }
 
-    for (auto idx : ptr->poiseRaceMap) {
+    for (auto& idx : ptr->poiseRaceMap) {
         if (aggressor) {
             RE::TESRace* a_actorRace = aggressor->race;
             RE::TESRace* a_mapRace = idx.first;
@@ -517,7 +512,7 @@ float Loki::PoiseMod::CalculateMaxPoise(RE::Actor* a_actor) {
 
     float a_result = (a_actor->equippedWeight + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
 
-    for (auto idx : ptr->poiseRaceMap) {
+    for (auto& idx : ptr->poiseRaceMap) {
         if (a_actor) {
             RE::TESRace* a_actorRace = a_actor->race;
             RE::TESRace* a_mapRace = idx.first;
@@ -633,7 +628,9 @@ float Loki::PoiseMod::GetSubmergedLevel(RE::Actor* a_actor, float a_zPos, RE::TE
     if (!a_actor->HasMagicEffect(ptr->poiseDelayEffect)) {
         auto a_result = (int)CalculateMaxPoise(a_actor);
         a_actor->pad0EC = a_result;
-        if (a_actor->pad0EC > 100000) { a_actor->pad0EC = 0.00f; }
+		if (a_actor->pad0EC > 100000) {
+			a_actor->pad0EC = (uint32_t)0.00f;
+		}
     }
 
     return _GetSubmergedLevel(a_actor, a_zPos, a_cell);
@@ -661,7 +658,8 @@ void Loki::PoiseMod::ProcessHitEvent(RE::Actor* a_actor, RE::HitData& a_hitData)
         dmg = 0.00f;
     }
     a_actor->pad0EC -= (int)dmg;  // there was some bullshit with integer underflow
-    if (a_actor->pad0EC > 100000) a_actor->pad0EC = 0.00f;  // this fixed it...
+	if (a_actor->pad0EC > 100000)
+		a_actor->pad0EC = (uint32_t)0.00f;  // this fixed it...
     if (ptr->ConsoleInfoDump) {
         RE::ConsoleLog::GetSingleton()->Print("---");
         RE::ConsoleLog::GetSingleton()->Print("Aggessor's Weight: %f", a_hitData.aggressor.get()->GetWeight());
@@ -681,7 +679,7 @@ void Loki::PoiseMod::ProcessHitEvent(RE::Actor* a_actor, RE::HitData& a_hitData)
     if (a_actor->GetHandle() == a_hitData.aggressor) { stagDir = 0.0f; } // 0 when self-hit
 
     auto a = a_actor->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
-    a->Cast(ptr->poiseDelaySpell, false, a_actor, 1.0f, false, 0.0f, 0);
+	a->CastSpellImmediate(ptr->poiseDelaySpell, false, a_actor, 1.0f, false, 0.0f, 0);
 
     float maxPoise = CalculateMaxPoise(a_actor);
     auto threshhold0 = maxPoise * ptr->poiseBreakThreshhold0;
@@ -697,7 +695,7 @@ void Loki::PoiseMod::ProcessHitEvent(RE::Actor* a_actor, RE::HitData& a_hitData)
     a_actor->GetGraphVariableBool(ptr->isBlocking, isBlk);
     if ((float)a_actor->pad0EC <= 0.00f) {
         a_actor->SetGraphVariableFloat(ptr->staggerDire, stagDir); // set direction
-        a_actor->pad0EC = maxPoise; // remember earlier when we calculated max poise health?
+		a_actor->pad0EC = (uint32_t)maxPoise;                       // remember earlier when we calculated max poise health?
         if (TrueHUDControl::GetSingleton()->g_trueHUD) {
             TrueHUDControl::GetSingleton()->g_trueHUD->
                 FlashActorSpecialBar(SKSE::GetPluginHandle(), a_actor->GetHandle(), false);
@@ -729,7 +727,7 @@ void Loki::PoiseMod::ProcessHitEvent(RE::Actor* a_actor, RE::HitData& a_hitData)
             }
         }
     } 
-    else if ((float)a_actor->pad0EC < threshhold0) {
+    else if ((float)a_actor->pad0EC < threshhold0 || (float)a_actor->pad0EC < 2.00f) {
         a_actor->SetGraphVariableFloat(ptr->staggerDire, stagDir); // set direction
         if (a_actor->HasKeyword(ptr->kCreature) || a_actor->HasKeyword(ptr->kDwarven)) { // if creature, use normal beh
             a_actor->SetGraphVariableFloat(ptr->staggerMagn, 0.75f);
@@ -758,7 +756,7 @@ void Loki::PoiseMod::ProcessHitEvent(RE::Actor* a_actor, RE::HitData& a_hitData)
             }
         }
     } 
-    else if ((float)a_actor->pad0EC < threshhold1) {
+    else if ((float)a_actor->pad0EC < threshhold1 || (float)a_actor->pad0EC < 5.00f) {
         a_actor->SetGraphVariableFloat(ptr->staggerDire, stagDir); // set direction
         if (a_actor->HasKeyword(ptr->kCreature) || a_actor->HasKeyword(ptr->kDwarven)) {
             a_actor->SetGraphVariableFloat(ptr->staggerMagn, 0.50f);
@@ -787,7 +785,7 @@ void Loki::PoiseMod::ProcessHitEvent(RE::Actor* a_actor, RE::HitData& a_hitData)
             }
         }
     } 
-    else if ((float)a_actor->pad0EC < threshhold2) {
+    else if ((float)a_actor->pad0EC < threshhold2 || (float)a_actor->pad0EC < 8.00f) {
         a_actor->SetGraphVariableFloat(ptr->staggerDire, stagDir); // set direction
         if (a_actor->HasKeyword(ptr->kCreature) || a_actor->HasKeyword(ptr->kDwarven)) {
             a_actor->SetGraphVariableFloat(ptr->staggerMagn, 0.25f);

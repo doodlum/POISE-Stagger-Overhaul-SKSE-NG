@@ -1,6 +1,6 @@
 #pragma once
 #include "TrueHUDAPI.h"
-#include "C:/dev/simpleini-master/SimpleIni.h"
+#include "SimpleIni.h"
 
 #include "PoiseMod.h"
 #include "Loki_PluginTools.h"

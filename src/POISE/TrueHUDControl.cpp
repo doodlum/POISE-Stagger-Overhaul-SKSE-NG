@@ -4,7 +4,7 @@ Loki::TrueHUDControl::TrueHUDControl() {
     CSimpleIniA ini;
     ini.SetUnicode();
     auto filename = L"Data/SKSE/Plugins/loki_POISE.ini";
-    SI_Error rc = ini.LoadFile(filename);
+    ini.LoadFile(filename);
 
     this->TrueHUDBars = ini.GetBoolValue("MAIN", "bTrueHUDBars", false);
 }
@@ -20,7 +20,7 @@ float Loki::TrueHUDControl::GetMaxSpecial([[maybe_unused]] RE::Actor* a_actor) {
 
     float a_result = (a_actor->equippedWeight + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
 
-    for (auto idx : ptr->poiseRaceMap) {
+    for (auto& idx : ptr->poiseRaceMap) {
         if (a_actor) {
             RE::TESRace* a_actorRace = a_actor->race;
             RE::TESRace* a_mapRace = idx.first;
