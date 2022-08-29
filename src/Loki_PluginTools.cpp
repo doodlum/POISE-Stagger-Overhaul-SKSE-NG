@@ -1,8 +1,7 @@
 #include "Loki_PluginTools.h"
 
 /* 
-   needed because *i* f*d up my Xbyak stuff
-   doodlez note: removed foul language and commented out unused function
+    needed because *i* fucked up my Xbyak stuff
 */
 //void* Loki::PluginTools::CodeAllocation(Xbyak::CodeGenerator& a_code, SKSE::Trampoline* t_ptr) {
 //
