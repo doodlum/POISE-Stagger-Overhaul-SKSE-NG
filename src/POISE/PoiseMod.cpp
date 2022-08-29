@@ -1,5 +1,7 @@
 #include "PoiseMod.h"
 
+#include "NG/ActorCache.h"
+
 void Loki::PoiseMod::ReadPoiseTOML() {
 
     constexpr auto path = L"Data/SKSE/Plugins/loki_POISE";
@@ -43,7 +45,7 @@ void Loki::PoiseMod::ReadPoiseTOML() {
         } catch (const std::exception& e) {
             logger::error("{}", e.what());
         } catch (...) {
-            logger::error("Unknown failure"sv);
+            logger::error("Unknown failure");
         }
     };
 
@@ -510,7 +512,7 @@ float Loki::PoiseMod::CalculateMaxPoise(RE::Actor* a_actor) {
 
     auto ptr = Loki::PoiseMod::GetSingleton();
 
-    float a_result = (a_actor->equippedWeight + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
+    float a_result = (ActorCache::GetSingleton()->GetOrCreateCachedWeight(a_actor) + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
 
     for (auto& idx : ptr->poiseRaceMap) {
         if (a_actor) {

@@ -4,8 +4,9 @@
 #include "POISE/TrueHUDAPI.h"
 #include "Loki_PluginTools.h"
 
-const SKSE::MessagingInterface* g_messaging2 = nullptr;
+#include "NG/ActorCache.h"
 
+const SKSE::MessagingInterface* g_messaging2 = nullptr;
 
 namespace PoiseMod {  // Papyrus Functions
 
@@ -54,7 +55,7 @@ namespace PoiseMod {  // Papyrus Functions
         } else {
             auto ptr = Loki::PoiseMod::GetSingleton();
 
-            float a_result = (a_actor->equippedWeight + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
+            float a_result = (ActorCache::GetSingleton()->GetOrCreateCachedWeight(a_actor) + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
 
             for (auto idx : ptr->poiseRaceMap) {
                 if (a_actor) {
@@ -140,7 +141,9 @@ static void MessageHandler(SKSE::MessagingInterface::Message* message) {
         break;
     }
     case SKSE::MessagingInterface::kNewGame:
+		ActorCache::GetSingleton()->Revert();
     case SKSE::MessagingInterface::kPostLoadGame: {
+		ActorCache::GetSingleton()->Revert();
         break;
     }
     case SKSE::MessagingInterface::kPostLoad: {
@@ -171,7 +174,7 @@ void InitializeLog()
 		util::report_and_fail("Failed to find standard logging directory"sv);
 	}
 
-	*path /= fmt::format("{}.log"sv, Plugin::NAME);
+	*path /= std::format("{}.log"sv, Plugin::NAME);
 	auto       sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 #endif
 
@@ -212,6 +215,8 @@ EXTERN_C [[maybe_unused]] __declspec(dllexport) bool SKSEAPI SKSEPlugin_Load(con
 	Loki::PoiseMod::InstallWaterHook();
 	Loki::PoiseMod::InstallIsActorKnockdownHook();
 	Loki::PoiseMod::InstallMagicEventSink();
+
+	ActorCache::RegisterEvents();
 
 	return true;
 }

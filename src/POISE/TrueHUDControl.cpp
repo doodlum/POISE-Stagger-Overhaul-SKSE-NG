@@ -1,5 +1,7 @@
 #include "TrueHUDControl.h"
 
+#include <NG/ActorCache.h>
+
 Loki::TrueHUDControl::TrueHUDControl() {
     CSimpleIniA ini;
     ini.SetUnicode();
@@ -18,7 +20,7 @@ float Loki::TrueHUDControl::GetMaxSpecial([[maybe_unused]] RE::Actor* a_actor) {
 
     auto ptr = Loki::PoiseMod::GetSingleton();
 
-    float a_result = (a_actor->equippedWeight + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
+    float a_result = (ActorCache::GetSingleton()->GetOrCreateCachedWeight(a_actor) + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
 
     for (auto& idx : ptr->poiseRaceMap) {
         if (a_actor) {
