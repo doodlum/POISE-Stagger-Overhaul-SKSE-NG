@@ -42,7 +42,7 @@ bool Loki::PluginTools::WeaponHasKeyword(RE::TESObjectWEAP* a_weap, RE::BSFixedS
 */
 RE::Effect* Loki::PluginTools::ActorHasEffectWithKeyword(RE::Actor* a_actor, RE::FormID a_formID) {
 
-    auto activeEffect = a_actor->GetActiveEffectList();
+    auto activeEffect = a_actor->AsMagicTarget()->GetActiveEffectList();
     if (activeEffect) {
         for (auto& ae : *activeEffect) {
             if (!ae->effect) {

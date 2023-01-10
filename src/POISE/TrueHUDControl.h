@@ -1,6 +1,5 @@
 #pragma once
 #include "TrueHUDAPI.h"
-#include "SimpleIni.h"
 
 #include "PoiseMod.h"
 #include "Loki_PluginTools.h"

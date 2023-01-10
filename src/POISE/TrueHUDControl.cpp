@@ -20,11 +20,11 @@ float Loki::TrueHUDControl::GetMaxSpecial([[maybe_unused]] RE::Actor* a_actor) {
 
     auto ptr = Loki::PoiseMod::GetSingleton();
 
-    float a_result = (ActorCache::GetSingleton()->GetOrCreateCachedWeight(a_actor) + (a_actor->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
+    float a_result = (ActorCache::GetSingleton()->GetOrCreateCachedWeight(a_actor) + (a_actor->AsActorValueOwner()->GetBaseActorValue(RE::ActorValue::kHeavyArmor) * 0.20f));
 
     for (auto& idx : ptr->poiseRaceMap) {
         if (a_actor) {
-            RE::TESRace* a_actorRace = a_actor->race;
+			RE::TESRace* a_actorRace = a_actor->GetRace();
             RE::TESRace* a_mapRace = idx.first;
             if (a_actor && a_actorRace && a_mapRace) {
                 if (a_actorRace->formID == a_mapRace->formID) {
@@ -59,5 +59,5 @@ float Loki::TrueHUDControl::GetMaxSpecial([[maybe_unused]] RE::Actor* a_actor) {
 }
 
 float Loki::TrueHUDControl::GetCurrentSpecial([[maybe_unused]] RE::Actor* a_actor) {
-    return (float)a_actor->pad0EC;
+	return (float)a_actor->GetActorRuntimeData().pad0EC;
 }
